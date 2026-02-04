@@ -1,1 +1,42 @@
+name: Build Windows EXE
 
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    env:
+      PYTHONUTF8: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade pyinstaller
+          if (Test-Path "requirements.txt") { python -m pip install -r requirements.txt }
+
+      - name: Build EXE (PyInstaller)
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --windowed `
+            --name "程式內容檢查工具" `
+            --hidden-import=tkinterdnd2 `
+            --hidden-import=tkinterdnd2.TkinterDnD `
+            main.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcode_checker_windows_exe
+          path: dist/*.exe
